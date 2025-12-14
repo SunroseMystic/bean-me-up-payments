@@ -1,0 +1,7 @@
+{
+  "name": "bean-me-up-payments",
+  "private": true,
+  "dependencies": {
+    "stripe": "^14.0.0"
+  }
+}
