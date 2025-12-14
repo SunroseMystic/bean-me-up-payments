@@ -10,7 +10,6 @@ export default async function handler(req, res) {
   try {
     const { amount } = req.body;
 
-    // cents: $3, $5, $10, $25
     const allowedAmounts = [300, 500, 1000, 2500];
     if (!allowedAmounts.includes(amount)) {
       return res.status(400).json({ error: "Invalid amount" });
@@ -22,10 +21,12 @@ export default async function handler(req, res) {
       automatic_payment_methods: { enabled: true },
     });
 
-    return res.status(200).json({ clientSecret: paymentIntent.client_secret });
+    return res.status(200).json({
+      clientSecret: paymentIntent.client_secret,
+    });
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ error: err.message });
   }
 }
-
 
