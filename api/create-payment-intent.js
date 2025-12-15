@@ -18,8 +18,11 @@ export default async function handler(req, res) {
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "usd",
-      automatic_payment_methods: { enabled: true },
-    });
+     automatic_payment_methods: { enabled: true },
+
+transfer_data: {
+  destination: process.env.STRIPE_CONNECT_DESTINATION_ACCOUNT,
+},
 
     return res.status(200).json({
       clientSecret: paymentIntent.client_secret,
