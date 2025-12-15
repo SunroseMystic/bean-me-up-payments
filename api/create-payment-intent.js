@@ -23,7 +23,7 @@ module.exports = async function handler(req, res) {
 transfer_data: {
   destination: process.env.STRIPE_CONNECT_DESTINATION_ACCOUNT,
 },
-
+    });
     return res.status(200).json({
       clientSecret: paymentIntent.client_secret,
     });
