@@ -1,43 +1,30 @@
-import Stripe from "stripe";
+const Stripe = require("stripe");
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-import { buffer } from "micro";
-
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).send("Method Not Allowed");
   }
 
-  const sig = req.headers["stripe-signature"];
-  const buf = await buffer(req);
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-  let event;
+  const chunks = [];
+  for await (const chunk of req) {
+    chunks.push(chunk);
+  }
+  const body = Buffer.concat(chunks);
+
+  const sig = req.headers["stripe-signature"];
 
   try {
-    event = stripe.webhooks.constructEvent(
-      buf,
+    const event = stripe.webhooks.constructEvent(
+      body,
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+    res.status(200).json({ received: true });
   } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    res.status(400).send("Webhook Error");
   }
-
-  if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object;
-
-    console.log("Payment succeeded:", paymentIntent.id);
-    // later: save to database here
-  }
-
-  res.json({ received: true });
-}
+};
 
 
