@@ -16,8 +16,8 @@ module.exports = async function handler(req, res) {
         quantity: 1,
       },
     ],
-    success_url: "https://YOUR-SITE.com/success",
-    cancel_url: "https://YOUR-SITE.com/cancel",
+    success_url: "https://bean-me-up-payments.vercel.app/success",
+    cancel_url: "https://bean-me-up-payments.vercel.app/cancel",
   });
 
   res.redirect(303, session.url);
