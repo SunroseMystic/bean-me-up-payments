@@ -2,7 +2,11 @@ const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 module.exports = async function handler(req, res) {
-  const amount = Number(req.query.amount || 300);
+  const amount = parseInt(req.query.amount, 10);
+
+if (!amount || amount <= 0) {
+  return res.status(400).send("Missing or invalid amount");
+}
 
   const session = await stripe.checkout.sessions.create({
     mode: "payment",
