@@ -4,11 +4,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
   try {
-    const amountParam = req.query.amount;
-    const dollars = Number(amountParam);
+    const amountDollars = Number(req.query.amount);
 
-    if (!dollars || dollars <= 0) {
-      return res.status(400).send("Missing or invalid amount");
+    if (!amountDollars || amountDollars <= 0) {
+      res.status(400).send("Missing or invalid amount");
+      return;
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -18,9 +18,9 @@ export default async function handler(req, res) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Buy Me Chocolate",
+              name: "Support a Creator",
             },
-            unit_amount: Math.round(dollars * 100),
+            unit_amount: amountDollars * 100,
           },
           quantity: 1,
         },
@@ -29,10 +29,13 @@ export default async function handler(req, res) {
       cancel_url: "https://bean-me-up-payments.vercel.app/cancel",
     });
 
-    res.redirect(303, session.url);
+    res.writeHead(303, { Location: session.url });
+    res.end();
   } catch (err) {
     res.status(500).send(err.message);
   }
 }
+
+
 
 
