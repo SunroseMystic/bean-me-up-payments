@@ -1,7 +1,7 @@
 {
   "name": "bean-me-up-payments",
   "private": true,
-  "type": "module"
+  "type": "module",
   "dependencies": {
     "stripe": "^14.0.0"
   }
