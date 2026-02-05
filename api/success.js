@@ -4,7 +4,7 @@ export default function handler(req, res) {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Thank you ￼</title>
+  <title>Thank you</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     body {
@@ -54,7 +54,7 @@ export default function handler(req, res) {
 </head>
 <body>
   <div class="card">
-    <h1>Thank you! ￼</h1>
+    <h1>Thank you!</h1>
     <p>Your support means a lot. The donation went through successfully.</p>
     <a class="button" href="https://buymechocolate.co">Return to Buy Me Chocolate</a>
   </div>
