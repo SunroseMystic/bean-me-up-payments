@@ -34,9 +34,8 @@ export default async function handler(req, res) {
           destination: CONNECTED_ACCOUNT_ID,
         },
       },
-
-      success_url: "https://bean-me-up-payments.vercel.app/success",
-      cancel_url: "https://bean-me-up-payments.vercel.app/cancel",
+success_url: "https://bean-me-up-payments.vercel.app/api/success",
+cancel_url: "https://bean-me-up-payments.vercel.app/api/cancel",
     });
 
     res.redirect(303, session.url);
