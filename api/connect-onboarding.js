@@ -1,3 +1,7 @@
+import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).end();
@@ -17,6 +21,6 @@ export default async function handler(req, res) {
 
     return res.redirect(302, accountLink.url);
   } catch (err) {
-    return res.status(500).send(err.message);
+    return res.status(500).json({ error: err.message });
   }
 }
