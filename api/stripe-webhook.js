@@ -21,6 +21,9 @@ module.exports = async (req, res) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
+if (event.type === "v2.money_management.financial_address.activated") {
+  console.log("CREATOR CONNECTED");
+}
     res.status(200).json({ received: true });
   } catch (err) {
     res.status(400).send("Webhook Error");
