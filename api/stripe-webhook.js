@@ -27,8 +27,8 @@ module.exports = async (req, res) => {
         const resend = new Resend(process.env.RESEND_API_KEY);
 
         await resend.emails.send({
-          from: 'onboarding@resend.dev',
-          to: 'vfosshop@gmail.com',
+          from: 'onboarding@crisoupvro.resend.app',
+        to: 'vfosshop@gmail.com',
           subject: '🚀 New Creator Onboarded!',
           text: 'A new creator just finished signing up! Check Stripe Connect to give them their Donation page.',
         });
