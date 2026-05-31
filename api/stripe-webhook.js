@@ -21,7 +21,7 @@ module.exports = async (req, res) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
-    if (event.type === "v2.money_management.financial_address.activated") {
+if (event.type === "account.updated") {
       try {
         const { Resend } = require('resend');
         const resend = new Resend(process.env.RESEND_API_KEY);
