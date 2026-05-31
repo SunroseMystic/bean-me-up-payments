@@ -21,9 +21,22 @@ module.exports = async (req, res) => {
       sig,
       process.env.STRIPE_WEBHOOK_SECRET
     );
-if (event.type === "v2.money_management.financial_address.activated") {
-  console.log("CREATOR CONNECTED");
-}
+    if (event.type === "v2.money_management.financial_address.activated") {
+      try {
+        const { Resend } = require('resend');
+        const resend = new Resend(process.env.RESEND_API_KEY);
+
+        await resend.emails.send({
+          from: 'onboarding@resend.dev',
+          to: 'vfosshop@gmail.com',
+          subject: '🚀 New Creator Onboarded!',
+          text: 'A new creator just finished signing up! Check Stripe Connect to give them their Donation page.',
+        });
+      } catch (emailErr) {
+        console.error("Email failed to send:", emailErr);
+      }
+    }
+
     res.status(200).json({ received: true });
   } catch (err) {
     res.status(400).send("Webhook Error");
