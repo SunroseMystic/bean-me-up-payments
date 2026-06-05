@@ -6,27 +6,31 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const sig = req.headers['stripe-signature'];
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    
+
     let event;
-    
+
     try {
       event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
     } catch (err) {
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-    
+
     if (event.type === 'account.updated') {
       const account = event.data.object;
-      
+
       if (account.charges_enabled && account.details_submitted) {
         const accountId = account.id;
-        
-        await resend.emails.send({
-          from: ''GoodDay@buymechocolate.co' ,
-          to: 'vfosshop@gmail.com',
-          subject: 'New Creator Signed Up!',
-          html: `<p>A new creator completed onboarding.</p><p><strong>Account ID:</strong> ${accountId}</p>`
-        });
+
+        try {
+          await resend.emails.send({
+            from: 'GoodDay@buymechocolate.co',
+            to: 'vfosshop@gmail.com',
+            subject: 'New Creator Signed Up!',
+            html: `<p>A new creator completed onboarding.</p><p><strong>Account ID: ${accountId}</strong></p>`,
+          });
+        } catch (emailError) {
+          console.error('Email send failed:', emailError);
+        }
       }
     }
     
