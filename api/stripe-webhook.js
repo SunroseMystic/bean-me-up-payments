@@ -15,7 +15,7 @@ export default async function handler(req, res) {
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    if (event.type === 'account.updated') {
+if (event.type === 'account.updated' || event.type === 'v2.core.account[configuration.merchant].updated') {
       const account = event.data.object;
 
       if (account.charges_enabled && account.details_submitted) {
