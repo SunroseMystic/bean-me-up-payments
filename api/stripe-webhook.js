@@ -23,7 +23,7 @@ if (event.type === 'account.updated' || event.type === 'v2.core.account[configur
 
         try {
           await resend.emails.send({
-            from: 'GoodDay@buymechocolate.co',
+            from: 'support@buymechocolate.co',
             to: 'vfosshop@gmail.com',
             subject: 'New Creator Signed Up!',
             html: `<p>A new creator completed onboarding.</p><p><strong>Account ID: ${accountId}</strong></p>`,
