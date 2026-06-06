@@ -12,7 +12,8 @@ export default async function handler(req, res) {
     let event;
 
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+      event = stripe.webhooks.constructEvent(
+        req.body, sig, webhookSecret);
     } catch (err) {
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
@@ -41,3 +42,9 @@ if (event.type === 'account.updated' || event.type === 'v2.core.account[configur
     res.status(405).send('Method Not Allowed');
   }
 }
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
+
