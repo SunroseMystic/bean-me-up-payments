@@ -3,48 +3,39 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-  try {
-    const amount = parseInt(req.query.amount, 10);
+  // 1. Only allow Shopify POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).send('Method Not Allowed');
+  }
 
-    if (!amount || amount <= 0) {
-      return res.status(400).send("Missing or invalid amount");
+  try {
+    // 2. Read the total price directly from Shopify's data body
+    const totalOrderAmount = parseFloat(req.body.total_price);
+
+    if (!totalOrderAmount || totalOrderAmount <= 0) {
+      return res.status(400).send("Missing or invalid amount from Shopify");
     }
 
-    // TEMP until creators connect:
-    // later this will be a real connected account ID like acct_123
+    // 3. Calculate your 3% tip jar cut (converted to cents for Stripe)
+    const tipJarCutInCents = Math.round(totalOrderAmount * 0.03 * 100);
+
     const CONNECTED_ACCOUNT_ID = process.env.STRIPE_CONNECT_ACCOUNT_ID;
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Support a Creator",
-            },
-            unit_amount: amount * 100,
-          },
-          quantity: 1,
-        },
-      ],
-
-    payment_intent_data: {
-  application_fee_amount: Math.round(amount * 100 * 0.03),
-
-  transfer_data: {
-    destination: CONNECTED_ACCOUNT_ID,
-  },
-},
-success_url: "https://bean-me-up-payments.vercel.app/api/success",
-cancel_url: "https://bean-me-up-payments.vercel.app/api/cancel",
+    // 4. Directly transfer the money to your Stripe account without a checkout page
+    const transfer = await stripe.transfers.create({
+      amount: tipJarCutInCents,
+      currency: "usd",
+      destination: CONNECTED_ACCOUNT_ID,
+      description: `3% Tip Jar Cut for Shopify Order #${req.body.order_number || ''}`,
     });
 
-    res.redirect(303, session.url);
+    return res.status(200).json({ success: true, transferId: transfer.id });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message });
   }
 }
+
 
 
 
