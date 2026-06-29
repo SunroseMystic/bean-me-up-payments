@@ -29,11 +29,13 @@ export default async function handler(req, res) {
         },
       ],
 
-      payment_intent_data: {
-        transfer_data: {
-          destination: CONNECTED_ACCOUNT_ID,
-        },
-      },
+    payment_intent_data: {
+  application_fee_amount: Math.round(amount * 100 * 0.03),
+
+  transfer_data: {
+    destination: CONNECTED_ACCOUNT_ID,
+  },
+},
 success_url: "https://bean-me-up-payments.vercel.app/api/success",
 cancel_url: "https://bean-me-up-payments.vercel.app/api/cancel",
     });
