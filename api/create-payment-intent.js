@@ -15,15 +15,18 @@ module.exports = async function handler(req, res) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
+       const platformCut = Math.round(amount * 0.03); // Calculates 3% in cents
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "usd",
-     automatic_payment_methods: { enabled: true },
-
-transfer_data: {
-  destination: process.env.STRIPE_CONNECT_DESTINATION_ACCOUNT,
-},
+      automatic_payment_methods: { enabled: true },
+      application_fee_amount: platformCut, // 1. Grabs your 3% platform fee
+      transfer_data: {
+        destination: process.env.STRIPE_CONNECT_DESTINATION_ACCOUNT, // 2. Sends remaining 97% to merchant
+      },
     });
+
     return res.status(200).json({
       clientSecret: paymentIntent.client_secret,
     });
