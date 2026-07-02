@@ -1,40 +1,55 @@
-  import Stripe from "stripe";
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
-  }
+  if (req.method !== "POST") {
+    return res.status(405).send("Method Not Allowed");
+  }
 
-  try {
-    const totalOrderAmount = parseFloat(req.body.total_price);
+  try {
+    const totalOrderAmount = parseFloat(req.body.total_price);
 
-    if (!totalOrderAmount || totalOrderAmount <= 0) {
-      return res.status(400).send("Missing or invalid amount from Shopify");
-    }
+    if (!totalOrderAmount || totalOrderAmount <= 0) {
+      return res.status(400).send("Missing or invalid amount from Shopify");
+    }
 
-    const tipJarCutInCents = Math.round(totalOrderAmount * 0.03 * 100);
-    const CONNECTED_ACCOUNT_ID = process.env.STRIPE_CONNECT_ACCOUNT_ID;
+    const amountInCents = Math.round(totalOrderAmount * 100);
+    const platformFee = Math.round(amountInCents * 0.03);
 
-    // Creates a secure payment intent attached to your connect account
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: tipJarCutInCents,
-      currency: "usd",
-      payment_method_types: ["card"],
-      description: `3% Tip Jar Cut for Shopify Order #${req.body.order_number || ''}`,
-      application_fee_amount: 0,
-      transfer_data: {
-        destination: CONNECTED_ACCOUNT_ID,
-      },
-    });
+    const connectedAccount =
+      process.env.STRIPE_CONNECT_DESTINATION_ACCOUNT;
 
-    return res.status(200).json({ success: true, intentId: paymentIntent.id });
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amountInCents,
+      currency: "usd",
+      automatic_payment_methods: {
+        enabled: true,
+      },
 
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
+      application_fee_amount: platformFee,
+
+      transfer_data: {
+        destination: connectedAccount,
+      },
+
+      description: `Shopify Order #${req.body.order_number || ""}`,
+    });
+
+    return res.status(200).json({
+      success: true,
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+    });
+  } catch (err) {
+    console.error(err);
+
+    return res.status(500).json({
+      error: err.message,
+    });
+  }
 }
+
 
 
 
