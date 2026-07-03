@@ -1,14 +1,14 @@
-const Stripe = require("stripe");
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-module.exports = async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { amount } = req.body;
+    const { amount } = req.body || {};
 
     const allowedAmounts = [300, 500, 1000, 2500];
     if (!allowedAmounts.includes(amount)) {
@@ -25,7 +25,6 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // HARD SAFETY CHECK: never allow destination to be the platform account
     if (platformAccount && destination === platformAccount) {
       return res.status(500).json({
         error:
@@ -40,17 +39,13 @@ module.exports = async function handler(req, res) {
       currency: "usd",
       automatic_payment_methods: { enabled: true },
       application_fee_amount: platformCut,
-      transfer_data: {
-        destination,
-      },
+      transfer_data: { destination },
     });
 
-    return res.status(200).json({
-      clientSecret: paymentIntent.client_secret,
-    });
+    return res.status(200).json({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
     console.error("create-payment-intent error:", err);
     return res.status(500).json({ error: err.message });
   }
-};
+}
 
