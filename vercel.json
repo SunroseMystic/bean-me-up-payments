@@ -1,6 +1,5 @@
 {
   "cleanUrls": true,
-  {
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/donate", "destination": "/donate.html" },
