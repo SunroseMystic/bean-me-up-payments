@@ -1,4 +1,4 @@
-export { default } from './create-payment-intent';
+export { default } from './create-payment-intent.js';
 
 
 
