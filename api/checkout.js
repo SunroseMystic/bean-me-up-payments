@@ -9,7 +9,6 @@ export default async function handler(req, res) {
 
   try {
     const { amount, destination } = req.body || {};
-    const platformAccount = process.env.STRIPE_CONNECT_ACCOUNT_ID;
 
     const allowedAmounts = [300, 500, 1000, 2500];
     if (!allowedAmounts.includes(amount)) {
@@ -19,9 +18,6 @@ export default async function handler(req, res) {
     if (!destination || !destination.startsWith("acct_")) {
       return res.status(400).json({ error: "Invalid destination account" });
     }
-
-    if (platformAccount && destination === platformAccount) {
-      return res.status(400).json({ error: "Destination cannot be platform account" });
     }
 
     // 3% goes to your platform
