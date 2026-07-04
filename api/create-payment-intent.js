@@ -34,7 +34,7 @@ const platformAccount = process.env.STRIPE_CONNECT_ACCOUNT_ID;
   },
 });
 
-    return res.status(200).json({ clientSecret: paymentIntent.client_secret });
+   return res.status(200).json({ client_secret: paymentIntent.client_secret });
   } catch (err) {
     console.error("create-payment-intent error:", err);
     return res.status(500).json({ error: err.message });
