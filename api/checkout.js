@@ -1,8 +1,4 @@
-export default async function handler(req, res) {
-  return res.status(410).json({
-    error: "Deprecated endpoint. Use /api/create-payment-intent instead."
-  });
-}
+export { default } from './create-payment-intent';
 
 
 
