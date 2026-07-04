@@ -32,15 +32,20 @@ export default async function handler(req, res) {
       });
     }
 
+    // 3% goes to your platform
     const platformCut = Math.round(amount * 0.03);
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
-      automatic_payment_methods: { enabled: true },
-      application_fee_amount: platformCut,
-      transfer_data: { destination },
-    });
+    const paymentIntent = await stripe.paymentIntents.create(
+      {
+        amount,
+        currency: "usd",
+        automatic_payment_methods: { enabled: true },
+        application_fee_amount: platformCut,
+      },
+      {
+        stripeAccount: destination,
+      }
+    );
 
     return res.status(200).json({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
