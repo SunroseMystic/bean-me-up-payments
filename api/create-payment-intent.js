@@ -8,30 +8,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount } = req.body || {};
-
+    const { amount, destination } = req.body || {};
+const platformAccount = process.env.STRIPE_CONNECT_ACCOUNT_ID;
     const allowedAmounts = [300, 500, 1000, 2500];
     if (!allowedAmounts.includes(amount)) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    const destination = process.env.STRIPE_CONNECT_DESTINATION_ACCOUNT;
-    const platformAccount = process.env.STRIPE_CONNECT_ACCOUNT_ID;
-
     if (!destination || !destination.startsWith("acct_")) {
-      return res.status(500).json({
-        error:
-          "Server misconfigured: STRIPE_CONNECT_DESTINATION_ACCOUNT is missing or invalid.",
-      });
-    }
-
+  return res.status(400).json({ error: "Invalid destination account" });
+}
     if (platformAccount && destination === platformAccount) {
-      return res.status(500).json({
-        error:
-          "Server misconfigured: destination account cannot be the platform account.",
-      });
-    }
-
+  return res.status(400).json({ error: "Destination cannot be platform account" });
+}
     // 3% goes to your platform
     const platformCut = Math.round(amount * 0.03);
 
