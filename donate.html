@@ -25,10 +25,12 @@
       if (!r.ok) return document.getElementById('msg').textContent = data.error || "Error starting checkout";
 
       if (data.url) {
-        window.location.href = data.url;
-      } else {
-        document.getElementById('msg').textContent = "Backend returned no checkout URL.";
-      }
+  window.location.href = data.url;
+} else if (data.client_secret) {
+  document.getElementById('msg').textContent = "Payment created. Missing checkout redirect URL.";
+} else {
+  document.getElementById('msg').textContent = JSON.stringify(data);
+}
     };
   </script>
 </body>
