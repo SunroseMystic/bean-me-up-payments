@@ -1,5 +1,8 @@
 {
+  "cleanUrls": true,
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/checkout.js" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/donate", "destination": "/donate.html" },
+    { "source": "/", "destination": "/donate.html" }
   ]
 }
