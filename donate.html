@@ -8,30 +8,40 @@
   <button id="pay" style="width:100%;padding:12px;font-size:18px">Donate</button>
   <p id="msg"></p>
 
-  <script>
-    document.getElementById('pay').onclick = async () => {
-      const amt = parseFloat(document.getElementById('amount').value || "0");
-      if (amt < 3) return document.getElementById('msg').textContent = "Minimum is $3";
+ <script>
+  document.getElementById('pay').onclick = async () => {
+    const amt = parseFloat(document.getElementById('amount').value || "0");
+    if (amt < 3) return document.getElementById('msg').textContent = "Minimum is $3";
 
-      document.getElementById('msg').textContent = "Starting secure checkout...";
+    const params = new URLSearchParams(window.location.search);
+    const destination = params.get('dest');
+    if (!destination || !destination.startsWith('acct_')) {
+      document.getElementById('msg').textContent = "Missing or invalid destination account.";
+      return;
+    }
 
-      const r = await fetch('/api/create-payment-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ total_price: amt })
-      });
+    document.getElementById('msg').textContent = "Starting secure checkout...";
 
-      const data = await r.json();
-      if (!r.ok) return document.getElementById('msg').textContent = data.error || "Error starting checkout";
+    const r = await fetch('/api/create-payment-intent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: Math.round(amt * 100),
+        destination
+      })
+    });
 
-      if (data.url) {
-  window.location.href = data.url;
-} else if (data.client_secret) {
-  document.getElementById('msg').textContent = "Payment created. Missing checkout redirect URL.";
-} else {
-  document.getElementById('msg').textContent = JSON.stringify(data);
-}
-    };
-  </script>
+    const data = await r.json();
+    if (!r.ok) return document.getElementById('msg').textContent = data.error || "Error starting checkout";
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else if (data.client_secret) {
+      document.getElementById('msg').textContent = "Payment created. Missing checkout redirect URL.";
+    } else {
+      document.getElementById('msg').textContent = JSON.stringify(data);
+    }
+  };
+</script>
 </body>
 </html>
