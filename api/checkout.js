@@ -10,21 +10,27 @@ export default async function handler(req, res) {
   try {
     const { amount, destination } = req.body || {};
 
-    const allowedAmounts = [300, 500, 1000, 2500];
-
-    if (!allowedAmounts.includes(amount)) {
-      return res.status(400).json({ error: "Invalid amount" });
+    // Allow any donation of $3.00 or more (amount is in cents)
+    if (!Number.isInteger(amount) || amount < 300) {
+      return res.status(400).json({
+        error: "Minimum donation is $3.00"
+      });
     }
 
+    // Require a valid Stripe Connect account
     if (!destination || !destination.startsWith("acct_")) {
-      return res.status(400).json({ error: "Invalid destination account" });
+      return res.status(400).json({
+        error: "Invalid destination account"
+      });
     }
 
-    // 3% goes to your platform
+    // Platform fee (3%)
     const platformCut = Math.round(amount * 0.03);
 
+    // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+
       line_items: [
         {
           price_data: {
@@ -37,13 +43,16 @@ export default async function handler(req, res) {
           quantity: 1
         }
       ],
+
       payment_intent_data: {
         application_fee_amount: platformCut,
         transfer_data: {
           destination
         }
       },
+
       success_url: "https://fuel.buymechocolate.co/success.html",
+
       cancel_url: `https://fuel.buymechocolate.co/donate.html?dest=${encodeURIComponent(destination)}`
     });
 
@@ -53,11 +62,13 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error("checkout error:", err);
+
     return res.status(500).json({
       error: err.message
     });
   }
 }
+
 
 
 
