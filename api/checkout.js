@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         }
       },
 
-      success_url: "https://fuel.buymechocolate.co/success.html",
+      success_url: "https://fuel.buymechocolate.co/api/success",
 
       cancel_url: `https://fuel.buymechocolate.co/donate.html?dest=${encodeURIComponent(destination)}`
     });
