@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, destination } = req.body || {};
+  const { amount, destination, creatorEmail } = req.body || {};
 
     // Allow any donation of $3.00 or more (amount is in cents)
     if (!Number.isInteger(amount) || amount < 300) {
@@ -30,7 +30,9 @@ export default async function handler(req, res) {
     // Create Stripe Checkout Session
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-
+ metadata: {
+    creatorEmail: creatorEmail,
+  },
       line_items: [
         {
           price_data: {
