@@ -79,19 +79,7 @@ export default async function handler(req, res) {
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     
-    const connectedAccountId = session.account_settings?.destination_account || 
-                               session.transfer_data?.destination || 
-                               session.on_behalf_of;
-    
-    let creatorEmail = null;
-    if (connectedAccountId) {
-      try {
-        const accountDetails = await stripe.accounts.retrieve(connectedAccountId);
-        creatorEmail = accountDetails.email || accountDetails.business_profile?.support_email;
-      } catch (stripeError) {
-        console.error('Stripe account lookup failed:', stripeError);
-      }
-    }
+    const creatorEmail = session.metadata?.creatorEmail;
 
     const amount = (session.amount_total / 100).toFixed(2);
     const currency = session.currency.toUpperCase();
