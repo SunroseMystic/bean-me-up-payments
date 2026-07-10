@@ -76,13 +76,7 @@ export default async function handler(req, res) {
       } catch (error) {
         console.error('Failed to send email:', error);
       }
-    }
-  }
-
-
-   } else {
-      console.log("❌ No creatorEmail found in metadata");
-    }
+     }
   }
 
   res.status(200).json({ received: true });
