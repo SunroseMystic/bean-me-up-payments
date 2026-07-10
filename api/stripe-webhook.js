@@ -64,27 +64,31 @@ export default async function handler(req, res) {
     console.log('📧 Connected account:', connectedAccountId);
 
     try {
-      const account = await stripe.accounts.retrieve(connectedAccountId);
-      console.log('✅ Retrieved account email:', account.email);
+const paymentIntent = await stripe.paymentIntents.retrieve(
+  transfer.source_transaction
+);
 
-      if (account.email) {
-        console.log('📤 Attempting to send email to:', account.email);
-        
-        const emailResult = await resend.emails.send({
-          from: 'support@buymechocolate.co',
-          to: account.email,
-          subject: 'You got fuel! 🍫',
-          html: `
-            <h2>You received a donation!</h2>
-            <p>Someone just tipped you ${currency} $${amount}</p>
-            <p>The money is on its way to your account.</p>
-          `,
-        });
-        
-        console.log('✅ Email sent successfully:', emailResult);
-      } else {
-        console.log('❌ No email on account');
-      }
+const creatorEmail = paymentIntent.metadata.creatorEmail;
+
+console.log("📧 Creator email:", creatorEmail);
+
+if (creatorEmail) {
+  const emailResult = await resend.emails.send({
+    from: "support@buymechocolate.co",
+    to: creatorEmail,
+    subject: "You got fuel! 🍫",
+    html: `
+      <h2>You received a donation!</h2>
+      <p>Someone just tipped you ${currency} $${amount}</p>
+      <p>The money is on its way to your account.</p>
+    `,
+  });
+
+  console.log("✅ Email sent:", emailResult);
+} else {
+  console.log("❌ No creatorEmail found in metadata");
+}
+
     } catch (error) {
       console.error('❌ Failed to send creator notification:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
