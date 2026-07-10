@@ -35,10 +35,50 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Handle payment_intent.succeeded from connected accounts
+  if (event.type === 'payment_intent.succeeded') {
+    const paymentIntent = event.data.object;
+    const connectedAccountId = event.account; // This is the creator's account ID
+    
+    let creatorEmail = null;
+    if (connectedAccountId) {
+      try {
+        const accountDetails = await stripe.accounts.retrieve(connectedAccountId);
+        creatorEmail = accountDetails.email || accountDetails.business_profile?.support_email;
+      } catch (stripeError) {
+        console.error('Stripe account lookup failed:', stripeError);
+      }
+    }
+
+    const amount = (paymentIntent.amount / 100).toFixed(2);
+    const currency = paymentIntent.currency.toUpperCase();
+
+    if (creatorEmail) {
+      try {
+        await resend.emails.send({
+          from: "support@buymechocolate.co",
+          to: creatorEmail,
+          subject: "You got fuel! 🍫",
+          html: `
+            <h2>You've got fuel!</h2>
+            <p>Your sidekick just collected ${currency} $${amount} to keep your fuel high and energy going.</p>
+            <p>Keep doing what you do, they see you!</p>
+            <p>Buy Me Chocolate</p>
+          `,
+        });
+        console.log('Fuel email sent to:', creatorEmail);
+      } catch (error) {
+        console.error('Failed to send email:', error);
+      }
+    } else {
+      console.error('No creator email found for account:', connectedAccountId);
+    }
+  }
+
+  // Keep your existing checkout.session.completed handler
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
     
-    // Fallbacks to safely find the connected account ID across Stripe API variants
     const connectedAccountId = session.account_settings?.destination_account || 
                                session.transfer_data?.destination || 
                                session.on_behalf_of;
