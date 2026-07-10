@@ -63,17 +63,20 @@
 
         const params = new URLSearchParams(window.location.search);
         const destination = params.get('dest');
-        if (!destination || !destination.startsWith('acct_')) {
+         if (!destination || !destination.startsWith('acct_')) {
           msg.textContent = "Missing or invalid destination account in URL.";
           return;
         }
+
+        const creatorEmail = params.get('email');
 
         const r = await fetch('/api/checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             amount: Math.round(amt * 100),
-            destination
+            destination,
+         creatorEmail
           })
         });
 
