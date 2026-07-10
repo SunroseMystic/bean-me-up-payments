@@ -35,24 +35,6 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle account.updated event
-  if (event.type === 'account.updated') {
-    const account = event.data.object;
-    
-    if (account.charges_enabled && account.details_submitted) {
-      try {
-        await resend.emails.send({
-          from: 'support@buymechocolate.co',
-          to: 'vfosshop@gmail.com',
-          subject: 'New Creator Signed Up!',
-          html: `<p>A new creator has completed their account setup: ${account.id}</p>`,
-        });
-      } catch (error) {
-        console.error('Failed to send admin notification:', error);
-      }
-    }
-  }
-
   // Handle a successful donor transaction
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
