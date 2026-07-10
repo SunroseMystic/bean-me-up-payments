@@ -37,14 +37,16 @@ export default async function handler(req, res) {
 
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const connectedAccountId = session.transfer_data?.destination || session.on_behalf_of;
+    
+    // Fallbacks to safely find the connected account ID across Stripe API variants
+    const connectedAccountId = session.account_settings?.destination_account || 
+                               session.transfer_data?.destination || 
+                               session.on_behalf_of;
     
     let creatorEmail = null;
     if (connectedAccountId) {
       try {
         const accountDetails = await stripe.accounts.retrieve(connectedAccountId);
-        
-        // This looks at Stripe's internal profile fields for the email address
         creatorEmail = accountDetails.email || accountDetails.business_profile?.support_email;
       } catch (stripeError) {
         console.error('Stripe account lookup failed:', stripeError);
