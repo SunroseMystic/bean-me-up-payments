@@ -10,72 +10,86 @@ export const config = {
   },
 };
 
+async function buffer(readable) {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).send('Method Not Allowed');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const buf = await buffer(req);
   const sig = req.headers['stripe-signature'];
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
   let event;
 
   try {
-    // Read the raw chunk data stream directly for Stripe verification
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-    }
-    const rawBody = Buffer.concat(chunks);
-
-    event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Handle account.updated event
   if (event.type === 'account.updated') {
     const account = event.data.object;
-
+    
     if (account.charges_enabled && account.details_submitted) {
-      const accountId = account.id;
-
       try {
         await resend.emails.send({
           from: 'support@buymechocolate.co',
           to: 'vfosshop@gmail.com',
           subject: 'New Creator Signed Up!',
-          html: `<p>A new creator completed onboarding.</p><p><strong>Account ID:</strong> ${accountId}</p>`,
+          html: `<p>A new creator has completed their account setup: ${account.id}</p>`,
         });
-      } catch (emailError) {
-        console.error('Email send failed:', emailError);
+      } catch (error) {
+        console.error('Failed to send admin notification:', error);
       }
     }
- }
+  }
 
+  // Handle transfer.created event
   if (event.type === 'transfer.created') {
     const transfer = event.data.object;
     const connectedAccountId = transfer.destination;
     const amount = (transfer.amount / 100).toFixed(2);
     const currency = transfer.currency.toUpperCase();
 
+    console.log('🔔 Transfer created event received:', transfer.id);
+    console.log('📧 Connected account:', connectedAccountId);
+
     try {
       const account = await stripe.accounts.retrieve(connectedAccountId);
-      
+      console.log('✅ Retrieved account email:', account.email);
+
       if (account.email) {
-        await resend.emails.send({
+        console.log('📤 Attempting to send email to:', account.email);
+        
+        const emailResult = await resend.emails.send({
           from: 'support@buymechocolate.co',
           to: account.email,
           subject: 'You got fuel! 🍫',
           html: `
-            <h1>You received a donation!</h1>
+            <h2>You received a donation!</h2>
             <p>Someone just tipped you ${currency} $${amount}</p>
             <p>The money is on its way to your account.</p>
           `,
         });
+        
+        console.log('✅ Email sent successfully:', emailResult);
+      } else {
+        console.log('❌ No email on account');
       }
     } catch (error) {
-      console.error('Failed to send creator notification:', error);
+      console.error('❌ Failed to send creator notification:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
     }
   }
 
-  res.json({ received: true });
+  res.status(200).json({ received: true });
 }
