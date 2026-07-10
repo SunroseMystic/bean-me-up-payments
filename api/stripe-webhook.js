@@ -1,8 +1,10 @@
 import Stripe from 'stripe';
 import { Resend } from 'resend';
+import { createClient } from '@supabase/supabase-js';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const resend = new Resend(process.env.RESEND_API_KEY);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export const config = {
   api: {
@@ -35,42 +37,21 @@ export default async function handler(req, res) {
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle a successful donor transaction
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-     const connectedAccountId = session.transfer_data?.destination || session.on_behalf_of;
+    const connectedAccountId = session.transfer_data?.destination || session.on_behalf_of;
     
     let creatorEmail = null;
     if (connectedAccountId) {
       try {
-        const accountDetails = await stripe.accounts.retrieve(connectedAccountId);
-        creatorEmail = accountDetails.email;
-      } catch (stripeError) {
-        console.error('Stripe account lookup failed:', stripeError);
-      }
-    }
-    const amount = (session.amount_total / 100).toFixed(2);
-    const currency = session.currency.toUpperCase();
+        const { data, error } = await supabase
+          .from('creators')
+          .select('email')
+          .eq('stripe_account_id', connectedAccountId)
+          .single();
 
-    if (creatorEmail) {
-      try {
-        await resend.emails.send({
-          from: "support@buymechocolate.co",
-          to: creatorEmail,
-          subject: "You got fuel! 🍫",
-          html: `
-            <h2>You've got fuel!</h2>
-            <p>Your sidekick just collected ${currency} $${amount} to keep your fuel high and energy going.</p>
-            <p>Keep doing what you do, they see you!</p>
-            <p>Buy Me Chocolate</p>
-          `,
-        });
-      } catch (error) {
-        console.error('Failed to send email:', error);
-      }
-     }
-  }
-
-  res.status(200).json({ received: true });
-}
-
+        if (data && !error) {
+          creatorEmail = data.email;
+        }
+      } catch (dbError) {
+        console.error('Database lookup failed:', dbError);
