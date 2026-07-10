@@ -38,7 +38,10 @@ export default async function handler(req, res) {
   // Handle a successful donor transaction
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const creatorEmail = session.metadata.creatorEmail;
+    const connectedAccountId = session.transfer_data?.destination;
+const accountDetails = await stripe.accounts.retrieve(connectedAccountId);
+const creatorEmail = accountDetails.email;
+
     const amount = (session.amount_total / 100).toFixed(2);
     const currency = session.currency.toUpperCase();
 
