@@ -53,47 +53,38 @@ export default async function handler(req, res) {
     }
   }
 
-  // Handle transfer.created event
-  if (event.type === 'transfer.created') {
-    const transfer = event.data.object;
-    const connectedAccountId = transfer.destination;
-    const amount = (transfer.amount / 100).toFixed(2);
-    const currency = transfer.currency.toUpperCase();
+  // Handle a successful donor transaction
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const creatorEmail = session.metadata.creatorEmail;
+    const amount = (session.amount_total / 100).toFixed(2);
+    const currency = session.currency.toUpperCase();
 
-    console.log('🔔 Transfer created event received:', transfer.id);
-    console.log('📧 Connected account:', connectedAccountId);
+    if (creatorEmail) {
+      try {
+        await resend.emails.send({
+          from: "support@buymechocolate.co",
+          to: creatorEmail,
+          subject: "You got fuel! 🍫",
+          html: `
+            <h2>You've got fuel!</h2>
+            <p>Your sidekick just collected ${currency} $${amount} to keep your fuel high and energy going.</p>
+            <p>Keep doing what you do, they see you!</p>
+            <p>Buy Me Chocolate</p>
+          `,
+        });
+      } catch (error) {
+        console.error('Failed to send email:', error);
+      }
+    }
+  }
 
-    try {
-const paymentIntent = await stripe.paymentIntents.retrieve(
-  transfer.source_transaction
-);
 
-const creatorEmail = paymentIntent.metadata.creatorEmail;
-
-console.log("📧 Creator email:", creatorEmail);
-
-if (creatorEmail) {
-  const emailResult = await resend.emails.send({
-    from: "support@buymechocolate.co",
-    to: creatorEmail,
-    subject: "You got fuel! 🍫",
-    html: `
-      <h2>You received a donation!</h2>
-      <p>Someone just tipped you ${currency} $${amount}</p>
-      <p>The money is on its way to your account.</p>
-    `,
-  });
-
-  console.log("✅ Email sent:", emailResult);
-} else {
-  console.log("❌ No creatorEmail found in metadata");
-}
-
-    } catch (error) {
-      console.error('❌ Failed to send creator notification:', error);
-      console.error('Error details:', JSON.stringify(error, null, 2));
+   } else {
+      console.log("❌ No creatorEmail found in metadata");
     }
   }
 
   res.status(200).json({ received: true });
 }
+
