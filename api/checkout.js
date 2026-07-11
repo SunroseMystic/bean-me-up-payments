@@ -31,8 +31,19 @@ export default async function handler(req, res) {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
  metadata: {
-    creatorEmail: creatorEmail,
+  creatorEmail,
+},
+
+payment_intent_data: {
+  metadata: {
+    creatorEmail,
   },
+  application_fee_amount: platformCut,
+  transfer_data: {
+    destination,
+  },
+},
+
       line_items: [
         {
           price_data: {
@@ -45,13 +56,6 @@ export default async function handler(req, res) {
           quantity: 1
         }
       ],
-
-      payment_intent_data: {
-        application_fee_amount: platformCut,
-        transfer_data: {
-          destination
-        }
-      },
 
       success_url: "https://fuel.buymechocolate.co/api/success",
 
