@@ -75,6 +75,31 @@ export default async function handler(req, res) {
     }
   }
 
+  // Handle account.updated - fires when a creator completes Stripe Connect onboarding
+  if (event.type === 'account.updated') {
+    const account = event.data.object;
+
+    // Only notify once, when they've actually finished onboarding
+    if (account.details_submitted) {
+      try {
+        await resend.emails.send({
+          from: "support@buymechocolate.co",
+          to: "support@buymechocolate.co", // sends to YOU, not the creator
+          subject: "New Creator Signed Up! 🥥",
+          html: `
+            <h2>New Creator Signed Up!</h2>
+            <p>A new creator completed onboarding.</p>
+            <p><strong>Account ID:</strong> ${account.id}</p>
+            <p><strong>Email:</strong> ${account.email || 'not provided'}</p>
+          `,
+        });
+        console.log('New creator signup email sent for:', account.id);
+      } catch (error) {
+        console.error('Failed to send new creator email:', error);
+      }
+    }
+  }
+  
   // Keep your existing checkout.session.completed handler
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
