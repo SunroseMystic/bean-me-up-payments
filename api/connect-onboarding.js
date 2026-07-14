@@ -7,6 +7,12 @@ export default async function handler(req, res) {
     return res.status(405).end();
   }
 
+  const userAgent = (req.headers["user-agent"] || "").toLowerCase();
+  const botSignals = ["bot", "crawl", "spider", "slurp", "facebookexternalhit", "slackbot", "whatsapp", "preview", "headless"];
+  if (botSignals.some((signal) => userAgent.includes(signal))) {
+    return res.status(403).end();
+  }
+
   try {
     const account = await stripe.accounts.create({
       type: "express",
