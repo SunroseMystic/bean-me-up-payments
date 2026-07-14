@@ -7,11 +7,6 @@ export default async function handler(req, res) {
     return res.status(405).end();
   }
 
-  const referer = req.headers.referer || "";
-  if (!referer.includes("buymechocolate.co")) {
-    return res.status(403).end();
-  }
-
   try {
     const account = await stripe.accounts.create({
       type: "express",
