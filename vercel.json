@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/donate", "destination": "/donate.html" },
+    { "source": "/connect", "destination": "/connect.html" },
     { "source": "/", "destination": "/donate.html" }
   ]
 }
