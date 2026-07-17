@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Set Up Your Donation Page</title>
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script type="module">
+    import { initBotId } from "https://esm.sh/botid/client/core";
+
+    initBotId({
+      protect: [
+        { path: '/api/connect-onboarding', method: 'POST' },
+      ],
+    });
+  </script>
   <style>
     :root { color-scheme: light; }
     body {
@@ -36,6 +45,7 @@
   <h1>Set up your donation page</h1>
   <p>Verify you're human, then connect your Stripe account to start receiving chocolate.</p>
 
+  <!-- IMPORTANT: put your real Turnstile Site Key here, not this placeholder -->
   <div class="cf-turnstile" data-sitekey="0x4AAAAAAD3RpPpo2bMZxuut" data-callback="onTurnstileSuccess"></div>
 
   <button id="continueBtn" type="button" disabled>Connect with Stripe</button>
