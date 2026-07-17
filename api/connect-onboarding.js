@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { checkBotId } from "botid/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
@@ -23,6 +24,14 @@ async function verifyTurnstile(token, remoteIp) {
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  const botIdResult = await checkBotId({
+    advancedOptions: { headers: req.headers },
+  });
+
+  if (botIdResult.isBot) {
+    return res.status(403).json({ error: "Bot detected" });
   }
 
   const userAgent = (req.headers["user-agent"] || "").toLowerCase();
