@@ -1,8 +1,10 @@
 import Stripe from "stripe";
+import crypto from "crypto";
 import { checkBotId } from "botid/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
+const LINK_SECRET = process.env.CONNECT_LINK_SECRET;
 
 async function verifyTurnstile(token, remoteIp) {
   if (!token) return false;
@@ -19,6 +21,30 @@ async function verifyTurnstile(token, remoteIp) {
 
   const data = await res.json();
   return data.success === true;
+}
+
+function verifyLinkToken(token) {
+  if (!token || typeof token !== "string" || !token.includes(".")) return null;
+
+  const [data, sig] = token.split(".");
+  const expectedSig = crypto.createHmac("sha256", LINK_SECRET).update(data).digest("base64url");
+
+  const sigBuf = Buffer.from(sig);
+  const expectedBuf = Buffer.from(expectedSig);
+  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
+    return null;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(Buffer.from(data, "base64url").toString());
+  } catch {
+    return null;
+  }
+
+  if (!payload.exp || Date.now() > payload.exp) return null;
+
+  return payload;
 }
 
 export default async function handler(req, res) {
@@ -40,9 +66,14 @@ export default async function handler(req, res) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { turnstileToken } = req.body || {};
-  const remoteIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim();
+  const { turnstileToken, linkToken } = req.body || {};
 
+  const linkPayload = verifyLinkToken(linkToken);
+  if (!linkPayload) {
+    return res.status(403).json({ error: "This link is invalid or has expired. Please request a new one." });
+  }
+
+  const remoteIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim();
   const verified = await verifyTurnstile(turnstileToken, remoteIp);
   if (!verified) {
     return res.status(403).json({ error: "CAPTCHA verification failed" });
@@ -51,6 +82,7 @@ export default async function handler(req, res) {
   try {
     const account = await stripe.accounts.create({
       type: "express",
+      email: linkPayload.email,
     });
 
     const accountLink = await stripe.accountLinks.create({
