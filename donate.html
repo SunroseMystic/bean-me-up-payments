@@ -67,4 +67,67 @@
     <h1>Bean Me UP!</h1>
 
     <label for="amount">Amount (USD)</label>
-    <input id="amount" type="number"
+    <input id="amount" type="number" min="3" step="0.01" value="3" />
+
+    <button id="pay" type="button">Send Fuel</button>
+    <p id="msg"></p>
+  </div>
+
+  <script>
+    document.getElementById('pay').onclick = async () => {
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('pay');
+
+      try {
+        btn.disabled = true;
+        msg.textContent = "Starting secure checkout...";
+
+        const amt = parseFloat(document.getElementById('amount').value || "0");
+        if (amt < 3) {
+          msg.textContent = "Minimum is $3";
+          return;
+        }
+
+        const params = new URLSearchParams(window.location.search);
+        const destination = params.get('dest');
+         if (!destination || !destination.startsWith('acct_')) {
+          msg.textContent = "Missing or invalid destination account in URL.";
+          return;
+        }
+
+        const creatorEmail = params.get('email');
+
+        const r = await fetch('/api/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Math.round(amt * 100),
+            destination,
+         creatorEmail
+          })
+        });
+
+        const raw = await r.text();
+        let data = {};
+        try { data = JSON.parse(raw); } catch (_) {}
+
+        if (!r.ok) {
+          msg.textContent = data.error || `Checkout failed (${r.status})`;
+          return;
+        }
+
+        if (!data.url || !/^https:\/\/checkout\.stripe\.com\//.test(data.url)) {
+          msg.textContent = "No Stripe Checkout URL returned from API.";
+          return;
+        }
+
+        window.location.assign(data.url);
+      } catch (e) {
+        msg.textContent = `Network/client error: ${e.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
