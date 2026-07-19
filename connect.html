@@ -39,59 +39,85 @@
     }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
     #msg { margin-top: 14px; min-height: 1.4em; font-size: 15px; color: #b00020; }
+    a.button {
+      display: inline-block;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 16px;
+      font-size: 22px;
+      border-radius: 16px;
+      background: #d9d9d9;
+      color: #222;
+      text-decoration: none;
+    }
   </style>
 </head>
 <body>
   <h1>Set up your donation page</h1>
-  <p>Verify you're human, then connect your Stripe account to start receiving chocolate.</p>
 
-  <!-- IMPORTANT: put your real Turnstile Site Key here, not this placeholder -->
-  <div class="cf-turnstile" data-sitekey="0x4AAAAAAD3RpPpo2bMZxuut" data-callback="onTurnstileSuccess"></div>
+  <div id="noTokenState" style="display: none;">
+    <p>This link is missing its setup token, so we can't verify it — probably because you navigated here directly instead of from your email.</p>
+    <a class="button" href="/start">Start over →</a>
+  </div>
 
-  <button id="continueBtn" type="button" disabled>Connect with Stripe</button>
-  <p id="msg"></p>
+  <div id="mainState">
+    <p>Verify you're human, then connect your Stripe account to start receiving chocolate.</p>
+
+    <!-- IMPORTANT: put your real Turnstile Site Key here, not this placeholder -->
+    <div class="cf-turnstile" data-sitekey="YOUR_TURNSTILE_SITE_KEY" data-callback="onTurnstileSuccess"></div>
+
+    <button id="continueBtn" type="button" disabled>Connect with Stripe</button>
+    <p id="msg"></p>
+  </div>
 
   <script>
-    let turnstileToken = null;
+    const linkToken = new URLSearchParams(window.location.search).get('token');
 
-    function onTurnstileSuccess(token) {
-      turnstileToken = token;
-      document.getElementById('continueBtn').disabled = false;
-    }
+    if (!linkToken) {
+      document.getElementById('noTokenState').style.display = 'block';
+      document.getElementById('mainState').style.display = 'none';
+    } else {
+      let turnstileToken = null;
 
-    document.getElementById('continueBtn').onclick = async () => {
-      const msg = document.getElementById('msg');
-      const btn = document.getElementById('continueBtn');
+      window.onTurnstileSuccess = (token) => {
+        turnstileToken = token;
+        document.getElementById('continueBtn').disabled = false;
+      };
 
-      if (!turnstileToken) {
-        msg.textContent = "Please complete the verification first.";
-        return;
-      }
+      document.getElementById('continueBtn').onclick = async () => {
+        const msg = document.getElementById('msg');
+        const btn = document.getElementById('continueBtn');
 
-      try {
-        btn.disabled = true;
-        msg.textContent = "Connecting to Stripe...";
-
-        const r = await fetch('/api/connect-onboarding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ turnstileToken })
-        });
-
-        const data = await r.json().catch(() => ({}));
-
-        if (!r.ok || !data.url) {
-          msg.textContent = data.error || `Something went wrong (${r.status})`;
-          btn.disabled = false;
+        if (!turnstileToken) {
+          msg.textContent = "Please complete the verification first.";
           return;
         }
 
-        window.location.assign(data.url);
-      } catch (e) {
-        msg.textContent = `Network error: ${e.message}`;
-        btn.disabled = false;
-      }
-    };
+        try {
+          btn.disabled = true;
+          msg.textContent = "Connecting to Stripe...";
+
+          const r = await fetch('/api/connect-onboarding', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ turnstileToken, linkToken })
+          });
+
+          const data = await r.json().catch(() => ({}));
+
+          if (!r.ok || !data.url) {
+            msg.textContent = data.error || `Something went wrong (${r.status})`;
+            btn.disabled = false;
+            return;
+          }
+
+          window.location.assign(data.url);
+        } catch (e) {
+          msg.textContent = `Network error: ${e.message}`;
+          btn.disabled = false;
+        }
+      };
+    }
   </script>
 </body>
 </html>
