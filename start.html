@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Set Up Your Donation Page</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script type="module">
+    import { initBotId } from "https://esm.sh/botid/client/core";
+
+    initBotId({
+      protect: [
+        { path: '/api/request-connect-link', method: 'POST' },
+      ],
+    });
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      max-width: 520px;
+      margin: 48px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+      text-align: center;
+    }
+    h1 { font-size: 32px; margin: 0 0 12px; }
+    p { font-size: 16px; color: #444; margin-bottom: 20px; }
+    .fine-print { font-size: 13px; color: #888; margin-top: 20px; }
+    input[type="email"] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px 16px;
+      font-size: 18px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      margin-bottom: 16px;
+    }
+    .cf-turnstile { display: flex; justify-content: center; margin-bottom: 20px; }
+    button {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 22px;
+      border-radius: 16px;
+      border: 1px solid #d0d0d0;
+      background: #d9d9d9;
+      color: #222;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #msg { margin-top: 14px; min-height: 1.4em; font-size: 15px; }
+    #msg.error { color: #b00020; }
+    #msg.success { color: #15803d; }
+  </style>
+</head>
+<body>
+  <h1>One quick step first 🍫</h1>
+  <p>We added an extra step since some very determined bots sometimes want free Stripe accounts. You're (probably) not a bot, so this'll take ten seconds — pop in your email and we'll send your personal setup link.</p>
+
+  <input type="email" id="email" placeholder="you@example.com" required />
+
+  <!-- IMPORTANT: put your real Turnstile Site Key here -->
+  <div class="cf-turnstile" data-sitekey="0x4AAAAAAD3RpPpo2bMZxuut" data-callback="onTurnstileSuccess"></div>
+
+  <button id="sendBtn" type="button" disabled>Send my link</button>
+  <p id="msg"></p>
+
+  <p class="fine-print">The link expires in 30 minutes and works once, so check your email right after.</p>
+
+  <script>
+    let turnstileToken = null;
+
+    function onTurnstileSuccess(token) {
+      turnstileToken = token;
+      document.getElementById('sendBtn').disabled = false;
+    }
+
+    document.getElementById('sendBtn').onclick = async () => {
+      const msg = document.getElementById('msg');
+      const btn = document.getElementById('sendBtn');
+      const email = document.getElementById('email').value.trim();
+
+      msg.className = '';
+      msg.textContent = '';
+
+      if (!email) {
+        msg.className = 'error';
+        msg.textContent = 'Please enter your email first.';
+        return;
+      }
+
+      if (!turnstileToken) {
+        msg.className = 'error';
+        msg.textContent = 'Please complete the verification first.';
+        return;
+      }
+
+      try {
+        btn.disabled = true;
+        msg.textContent = 'Sending your link...';
+
+        const r = await fetch('/api/request-connect-link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, turnstileToken })
+        });
+
+        const data = await r.json().catch(() => ({}));
+
+        if (!r.ok) {
+          msg.className = 'error';
+          msg.textContent = data.error || `Something went wrong (${r.status})`;
+          btn.disabled = false;
+          return;
+        }
+
+        msg.className = 'success';
+        msg.textContent = 'Check your email! Your setup link is on its way. 🍫';
+      } catch (e) {
+        msg.className = 'error';
+        msg.textContent = `Network error: ${e.message}`;
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
