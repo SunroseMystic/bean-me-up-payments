@@ -18,6 +18,24 @@ async function buffer(readable) {
   return Buffer.concat(chunks);
 }
 
+// Tries both webhook secrets, since this endpoint receives events from two
+// separate Stripe destinations (your account, and connected accounts) that
+// each sign with their own secret.
+function verifyEvent(buf, sig) {
+  const secrets = [process.env.STRIPE_WEBHOOK_SECRET, process.env.STRIPE_WEBHOOK_SECRET_CONNECT];
+
+  for (const secret of secrets) {
+    if (!secret) continue;
+    try {
+      return stripe.webhooks.constructEvent(buf, sig, secret);
+    } catch (err) {
+      // try the next secret
+    }
+  }
+
+  return null;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -26,13 +44,11 @@ export default async function handler(req, res) {
   const buf = await buffer(req);
   const sig = req.headers['stripe-signature'];
 
-  let event;
+  const event = verifyEvent(buf, sig);
 
-  try {
-    event = stripe.webhooks.constructEvent(buf, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+  if (!event) {
+    console.error('Webhook signature verification failed against all known secrets');
+    return res.status(400).send('Webhook Error: signature verification failed');
   }
 
   // Handle payment_intent.succeeded from connected accounts
@@ -114,7 +130,7 @@ export default async function handler(req, res) {
         await resend.emails.send({
           from: "support@buymechocolate.co",
           to: creatorEmail,
-          subject: "You got fuel! 🍫",
+          subject: "You've got fuel! 🍫",
           html: `
             <h2>You've got fuel!</h2>
             <p>Your sidekick just collected ${currency} $${amount} to keep your fuel high and energy going.</p>
