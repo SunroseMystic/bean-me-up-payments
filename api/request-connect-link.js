@@ -1,15 +1,14 @@
 import { Resend } from "resend";
 import crypto from "crypto";
 import { checkBotId } from "botid/server";
-import disposableDomains from "disposable-email-domains";
+import disposableDomains from "disposable-email-domains" assert { type: "json" };
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const LINK_SECRET = process.env.CONNECT_LINK_SECRET;
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const LINK_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-const manualBlocklist = ["fkateru.com", "ruutukf.com", "girext.com", "bltiwd.com", "ozsaip.com", "bwmyga.com"];
-const disposableSet = new Set([...disposableDomains, ...manualBlocklist]);
+const disposableSet = new Set(disposableDomains);
 
 function signToken(payload) {
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
