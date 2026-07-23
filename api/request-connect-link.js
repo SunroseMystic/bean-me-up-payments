@@ -1,21 +1,15 @@
 import { Resend } from "resend";
 import crypto from "crypto";
 import { checkBotId } from "botid/server";
-import disposableDomains from "disposable-email-domains" assert { type: "json" };
-
 const resend = new Resend(process.env.RESEND_API_KEY);
 const LINK_SECRET = process.env.CONNECT_LINK_SECRET;
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const LINK_TTL_MS = 30 * 60 * 1000; // 30 minutes
-
-const disposableSet = new Set(disposableDomains);
-
 function signToken(payload) {
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
   const sig = crypto.createHmac("sha256", LINK_SECRET).update(data).digest("base64url");
   return `${data}.${sig}`;
 }
-
 async function verifyTurnstile(token, remoteIp) {
   if (!token) return false;
   const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
@@ -30,16 +24,9 @@ async function verifyTurnstile(token, remoteIp) {
   const data = await res.json();
   return data.success === true;
 }
-
 function isValidEmail(email) {
   return typeof email === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
-
-function isDisposableEmail(email) {
-  const domain = email.split("@")[1]?.toLowerCase().trim();
-  return domain ? disposableSet.has(domain) : true;
-}
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -53,9 +40,6 @@ export default async function handler(req, res) {
   const { email, turnstileToken } = req.body || {};
   if (!isValidEmail(email)) {
     return res.status(400).json({ error: "Please enter a valid email address" });
-  }
-  if (isDisposableEmail(email)) {
-    return res.status(403).json({ error: "Please use a permanent email address, not a temporary/disposable one." });
   }
   const remoteIp = req.headers["x-forwarded-for"]?.split(",")[0]?.trim();
   const verified = await verifyTurnstile(turnstileToken, remoteIp);
