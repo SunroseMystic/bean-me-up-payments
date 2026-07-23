@@ -8,7 +8,8 @@ const LINK_SECRET = process.env.CONNECT_LINK_SECRET;
 const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 const LINK_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
-const disposableSet = new Set(disposableDomains);
+const manualBlocklist = ["fkateru.com", "ruutukf.com", "girext.com", "bltiwd.com", "ozsaip.com", "bwmyga.com"];
+const disposableSet = new Set([...disposableDomains, ...manualBlocklist]);
 
 function signToken(payload) {
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
