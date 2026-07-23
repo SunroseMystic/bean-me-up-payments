@@ -1,7 +1,7 @@
 import { Resend } from "resend";
 import crypto from "crypto";
 import { checkBotId } from "botid/server";
-import disposableDomains from "disposable-email-domains" assert { type: "json" };
+import disposableDomains from "disposable-email-domains";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const LINK_SECRET = process.env.CONNECT_LINK_SECRET;
