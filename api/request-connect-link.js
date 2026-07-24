@@ -55,7 +55,7 @@ export default async function handler(req, res) {
       subject: "Your Buy Me Chocolate setup link 🍫🔗",
       html: `
         <h2>Almost there!</h2>
-        <p>Here's your personal link to connect your Stripe account and start receiving chocolate:</p>
+        <p>Here's your personal link to connect your Stripe account and start receiving cacao currency:</p>
         <p><a href="${link}">Connect your Stripe account →</a></p>
         <p>This link works once and expires in 30 minutes, so don't let it sit too long.</p>
         <p>Didn't request this? No worries, just ignore this email — nothing happens unless you click.</p>
