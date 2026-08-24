@@ -86,12 +86,8 @@
 
   <script>
     document.getElementById('backLink').onclick = () => {
-      if (document.referrer) {
-        window.history.back();
-      } else {
-        window.location.assign('https://buymechocolate.co');
-      }
-    };
+  window.location.assign('https://buymechocolate.co');
+};
 
     document.getElementById('pay').onclick = async () => {
       const msg = document.getElementById('msg');
